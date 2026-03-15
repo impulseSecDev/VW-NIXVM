@@ -1,0 +1,10 @@
+
+keys:
+  - &admin_tim age1az28qfxahja456lhj2hwedypc85852c0upn3achn5jw83a76uvqsxl6t9v
+  - &server_vaultwarden age196c8e2dk77w746exuxgspktn4zlswkqrq23y6ff7rkw4mf9vwdkqf0lj36
+creation_rules:
+  - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - age:
+      - *admin_tim
+      - *server_vaultwarden

@@ -1,4 +1,3 @@
-
 { config, lib, pkgs, ... }:
 
 {
@@ -10,12 +9,14 @@
       ./vaultwarden.nix
       ./wireguard.nix
       ./nginx.nix
+      ./fail2ban.nix
+      ./suricata.nix
     ];
 
   swapDevices = [{
     device = "/var/lib/swapfile";
     size = 4 * 1024;
-  }];  
+  }];
 
   sops.secrets."user_password" = {
     neededForUsers = true;
@@ -31,7 +32,7 @@
       "nix-command"
       "flakes"
     ];
-  }; 
+  };
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -68,7 +69,7 @@
       SUDO_EDITOR = "nvim";
       VISUAL = "nvim";
       SOPS_EDITOR = "vim";
-    };  
+    };
   };
 
   users.users.root.hashedPassword = "!";
@@ -77,10 +78,10 @@
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
-  # environment.systemPackages = with pkgs; [
-  #   vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #   wget
-  # ];
+  environment.systemPackages = with pkgs; [
+    wget
+    suricata
+  ];
 
 
   # List services that you want to enable:
@@ -90,4 +91,3 @@
   system.stateVersion = "25.11"; # Did you read the comment?
 
 }
-

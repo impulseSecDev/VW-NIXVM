@@ -9,12 +9,10 @@
     "elastic_user" = {};
   };
 
-  # Lua script to parse Tailscale SSH sessions from login _CMDLINE
   environment.etc."fluent-bit/tailscale-parse.lua".text = ''
     function parse_tailscale(tag, timestamp, record)
       local cmdline = record["_CMDLINE"]
       if cmdline then
-        -- Match Tailscale CGNAT IP in -h 100.x.x.x
         local ip = string.match(cmdline, "-h%s+(100%.[%d%.]+)")
         if ip then
           record["tailscale_src_ip"] = ip
@@ -26,12 +24,57 @@
     end
   '';
 
+  environment.etc."fluent-bit/fail2ban-parse.lua".text = ''
+    function parse_fail2ban(tag, timestamp, record)
+      local msg = record["message"] or ""
+      local jail, action, ip = string.match(msg, "%[([^%]]+)%]%s+(%w+)%s+([%d%.]+)")
+      if jail then
+        record["jail"] = jail
+        record["action"] = action
+        record["src_ip"] = ip
+      end
+      local jail_only = string.match(msg, "%[([^%]]+)%]")
+      if jail_only and not jail then
+        record["jail"] = jail_only
+      end
+      return 1, timestamp, record
+    end
+  '';
+
+  environment.etc."fluent-bit/vaultwarden-auth.lua".text = ''
+    function classify_vw_auth(tag, timestamp, record)
+      local msg = record["MESSAGE"] or ""
+
+      if msg:find("Username or password is incorrect") then
+        record["event_type"] = "login_failure"
+        record["client_ip"]  = msg:match("IP: ([%d%.%:a-fA-F]+)")
+        record["username"]   = msg:match("Username: ([^%.]+)")
+      elseif msg:find("Successful login") then
+        record["event_type"] = "login_success"
+        record["client_ip"]  = msg:match("IP: ([%d%.%:a-fA-F]+)")
+        record["username"]   = msg:match("Username: ([^%.]+)")
+      end
+
+      return 1, timestamp, record
+    end
+  '';
+
+  environment.etc."fluent-bit/parsers.conf".text = ''
+    [PARSER]
+        Name        suricata-eve
+        Format      json
+        Time_Key    timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+        Time_Keep   On
+  '';
+
   sops.templates."fluent-bit.conf" = {
     content = ''
       [SERVICE]
-          flush     1
-          log_level info
-          daemon    off
+          flush        1
+          log_level    info
+          daemon       off
+          Parsers_File /etc/fluent-bit/parsers.conf
 
       [INPUT]
           name systemd
@@ -40,7 +83,39 @@
       [INPUT]
           name tail
           path /var/log/*.log
-          tag  nixos.tail
+          tag  vw.tail
+
+      [INPUT]
+          name              systemd
+          tag               vw.fail2ban
+          systemd_filter    _SYSTEMD_UNIT=fail2ban.service
+          db                /var/lib/fluent-bit/fail2ban.db
+
+      [INPUT]
+          name              systemd
+          tag               vw.vaultwarden
+          systemd_filter    _SYSTEMD_UNIT=vaultwarden.service
+          read_from_tail    on
+          db                /var/lib/fluent-bit/vaultwarden.db
+
+      [INPUT]
+          name              tail
+          tag               vw.suricata.eve
+          path              /var/log/suricata/eve.json
+          db                /var/lib/fluent-bit/suricata-eve.db
+          mem_buf_limit     10MB
+          skip_long_lines   on
+          refresh_interval  5
+          parser            suricata-eve
+
+      [INPUT]
+          name              tail
+          tag               vw.suricata.fast
+          path              /var/log/suricata/fast.log
+          db                /var/lib/fluent-bit/suricata-fast.db
+          mem_buf_limit     5MB
+          skip_long_lines   on
+          refresh_interval  5
 
       [FILTER]
           name   modify
@@ -48,10 +123,28 @@
           remove SYSLOG_TIMESTAMP
 
       [FILTER]
-          name    lua
-          match   *.journal
-          script  /etc/fluent-bit/tailscale-parse.lua
-          call    parse_tailscale
+          name   lua
+          match  *.journal
+          script /etc/fluent-bit/tailscale-parse.lua
+          call   parse_tailscale
+
+      [FILTER]
+          name   lua
+          match  vw.fail2ban
+          script /etc/fluent-bit/fail2ban-parse.lua
+          call   parse_fail2ban
+
+      [FILTER]
+          name   lua
+          match  vw.vaultwarden
+          script /etc/fluent-bit/vaultwarden-auth.lua
+          call   classify_vw_auth
+
+      [FILTER]
+          name     record_modifier
+          match    vw.*
+          Record   hostname VW
+          Record   source   vm-vaultwarden
 
       [OUTPUT]
           name               es
@@ -77,11 +170,10 @@
   };
 
   systemd.services.fluent-bit = {
-    serviceConfig.SupplementaryGroups = [ "adm" ];
+    serviceConfig = {
+      SupplementaryGroups = [ "adm" "suricata" ];
+      StateDirectory = lib.mkForce "fluent-bit";
+      StateDirectoryMode = "0750";
+    };
   };
-
-  # Prevents fluent-bit from resending logs on system restart or crash
-  systemd.tmpfiles.rules = [
-    "d /var/lib/fluent-bit 0750 fluent-bit fluent-bit -"
-  ];
 }

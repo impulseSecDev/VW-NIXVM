@@ -42,17 +42,20 @@
   '';
 
   environment.etc."fluent-bit/vaultwarden-auth.lua".text = ''
-    function classify_vw_auth(tag, timestamp, record)
-      local msg = record["MESSAGE"] or ""
+    function parse_vw_auth(tag, timestamp, record)
+      if not record then return 1, timestamp, record end
 
-      if msg:find("Username or password is incorrect") then
+      local msg = record["log"] or record["MESSAGE"] or ""
+
+      if msg:find("incorrect") or msg:find("invalid") then
         record["event_type"] = "login_failure"
-        record["client_ip"]  = msg:match("IP: ([%d%.%:a-fA-F]+)")
-        record["username"]   = msg:match("Username: ([^%.]+)")
-      elseif msg:find("Successful login") then
+        record["client_ip"]  = msg:match("IP: ([%d%.%:a%-fA%-F]+)")
+        record["username"]   = msg:match("Username: ([^%s]+)%.")
+
+      elseif msg:find("logged in successfully") then
         record["event_type"] = "login_success"
-        record["client_ip"]  = msg:match("IP: ([%d%.%:a-fA-F]+)")
-        record["username"]   = msg:match("Username: ([^%.]+)")
+        record["username"]   = msg:match("User ([^%s]+) logged in")
+        record["client_ip"]  = msg:match("IP: ([%d%.%:a%-fA%-F]+)")
       end
 
       return 1, timestamp, record

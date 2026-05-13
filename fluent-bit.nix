@@ -26,16 +26,12 @@
 
   environment.etc."fluent-bit/fail2ban-parse.lua".text = ''
     function parse_fail2ban(tag, timestamp, record)
-      local msg = record["message"] or ""
+      local msg = record["log"] or record["message"] or ""
       local jail, action, ip = string.match(msg, "%[([^%]]+)%]%s+(%w+)%s+([%d%.]+)")
       if jail then
         record["jail"] = jail
         record["action"] = action
         record["src_ip"] = ip
-      end
-      local jail_only = string.match(msg, "%[([^%]]+)%]")
-      if jail_only and not jail then
-        record["jail"] = jail_only
       end
       return 1, timestamp, record
     end
@@ -62,6 +58,7 @@
     end
   '';
 
+
   environment.etc."fluent-bit/parsers.conf".text = ''
     [PARSER]
         Name        suricata-eve
@@ -82,24 +79,18 @@
       [INPUT]
           name systemd
           tag  vw.journal
+          db   /var/lib/fluent-bit/journal.db
 
       [INPUT]
           name tail
-          path /var/log/*.log
+          path /var/log/syslog /var/log/messages
           tag  vw.tail
 
       [INPUT]
-          name              systemd
+          name              tail
           tag               vw.fail2ban
-          systemd_filter    _SYSTEMD_UNIT=fail2ban.service
+          path              /var/log/fail2ban.log
           db                /var/lib/fluent-bit/fail2ban.db
-
-      [INPUT]
-          name              systemd
-          tag               vw.vaultwarden
-          systemd_filter    _SYSTEMD_UNIT=vaultwarden.service
-          read_from_tail    on
-          db                /var/lib/fluent-bit/vaultwarden.db
 
       [INPUT]
           name              tail
@@ -139,9 +130,9 @@
 
       [FILTER]
           name   lua
-          match  vw.vaultwarden
+          match  vw.*
           script /etc/fluent-bit/vaultwarden-auth.lua
-          call   classify_vw_auth
+          call   parse_vw_auth
 
       [FILTER]
           name     record_modifier
@@ -174,7 +165,8 @@
 
   systemd.services.fluent-bit = {
     serviceConfig = {
-      SupplementaryGroups = [ "adm" "suricata" ];
+      # Critical for reading /var/lib/vaultwarden and suricata logs
+      SupplementaryGroups = [ "adm" "suricata" "vaultwarden" ];
       StateDirectory = lib.mkForce "fluent-bit";
       StateDirectoryMode = "0750";
     };

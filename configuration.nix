@@ -72,6 +72,8 @@
     };
   };
 
+  nix.settings.trusted-users = [ "root" "tim" ]
+
   users.users.root.hashedPassword = "!";
   programs.neovim.enable = true;
   programs.nano.enable = false;

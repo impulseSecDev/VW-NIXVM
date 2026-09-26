@@ -9,28 +9,40 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
-  nixos-hardware = {
-    url = "github:nixos/nixos-hardware";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
+
+    # refer to https://github.com/nvmd/nixos-raspberrypi for documentation on nixos-raspberrypi
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { nixpkgs, nixos-hardware, sops-nix, ... }: {
+  nixConfig = {
+    extra-substituters = [
+      "https://nixos-raspberrypi.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+    ];
+  };
+
+  outputs = inputs@{ nixpkgs, nixos-raspberrypi, sops-nix, ... }: {
     nixosConfigurations.vw = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
-      #specialArgs = { inherit inputs; };
+      specialArgs = { inherit (inputs) nixos-raspberrypi; };
       modules = [
         ./configuration.nix
         sops-nix.nixosModules.sops
-        nixos-hardware.nixosModules.raspberry-pi-3
-        "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-        {
-          hardware.raspberry-pi.firmware.uboot.enable = true;
-        }
+        #"${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+        # {
+        #   hardware.raspberry-pi.firmware.uboot.enable = true;
+        # }
         ({ pkgs, lib, ... }: {
-          sdImage.compressImage = false;
+          #sdImage.compressImage = false;
+          imports = with nixos-raspberrypi.nixosModules; [
+            nixos-raspberrypi.lib.inject-overlays 
+            trusted-nix-caches
+            raspberry-pi-3.base
+          ];
         })
       ];
     };

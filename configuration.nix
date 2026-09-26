@@ -2,7 +2,8 @@
 
 {
   imports =
-    [ # Include the results of the hardware scan.
+    [ 
+      ./.disko-sd.nix
       #./fluent-bit.nix
       #./wazuh-agent.nix
       # ./vaultwarden.nix
@@ -13,13 +14,6 @@
     ];
 
   zramSwap.enable = true; # Highly recommended for 4GB/8GB Pis
-
-# Use the generic boot loader.
-    boot.loader.grub.enable = false;
-    boot.loader.generic-extlinux-compatible.enable = true;
-
-# Standard nonfree rasberry pi firmware.
-  hardware.enableRedistributableFirmware = true;
 
   services.openssh = {
     enable = false;
@@ -66,8 +60,6 @@
     extraGroups = [ "wheel" "docker" ]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [
       btop
-      vim
-      tmux
       sops
     ];
   };
@@ -89,7 +81,6 @@ environment = {
   nix.settings.trusted-users = [ "root" "tim" ];
   users.users.root.hashedPassword = "!";
   programs.neovim.enable = true;
-  programs.nano.enable = false;
 
 # List packages installed in system profile.
 # You can use https://search.nixos.org/ to find more packages (and options).

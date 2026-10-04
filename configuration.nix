@@ -3,10 +3,10 @@
 {
   imports =
     [ 
-      ./.disko-sd.nix
-      #./fluent-bit.nix
-      #./wazuh-agent.nix
-      # ./vaultwarden.nix
+      ./disko-sd.nix
+      ./fluent-bit.nix
+      ./wazuh-agent.nix
+       ./vaultwarden.nix
        ./wireguard.nix
        ./nginx.nix
        ./fail2ban.nix
@@ -18,14 +18,6 @@
   services.openssh = {
     enable = false;
     openFirewall = false;
-    settings = {
-      PasswordAuthentication = true;
-      KbdInteractiveAuthentication = false;
-      PermitRootLogin = "no";
-      AllowUsers = [ "tim" ];
-      MaxAuthTries = 3;
-      PerSourcePenalties = "crash:3600s authfail:3600s max:86400s";
-    };
   };
 
   boot.kernelParams = [ "nomodeset" ];

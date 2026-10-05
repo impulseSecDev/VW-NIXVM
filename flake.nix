@@ -32,9 +32,10 @@
       modules = [
         ./configuration.nix
         sops-nix.nixosModules.sops
-        #"${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+        "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
         ({ pkgs, lib, ... }: {
-          #sdImage.compressImage = false;
+          sdImage.compressImage = false;
+          sdImage.firmwareSize = 1024;
           imports = with nixos-raspberrypi.nixosModules; [
             nixos-raspberrypi.lib.inject-overlays 
             trusted-nix-caches

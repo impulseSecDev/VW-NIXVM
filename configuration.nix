@@ -3,7 +3,6 @@
 {
   imports =
     [ 
-      ./disko-sd.nix
       ./fluent-bit.nix
       ./wazuh-agent.nix
        ./vaultwarden.nix

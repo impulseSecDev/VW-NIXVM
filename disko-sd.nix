@@ -11,10 +11,10 @@
       fsType = "ext4";
       options = [ "noatime" "noauto" "x-systemd.automount" "x-systemd.device-timeout=30" ];
     };
-    "/var" = {
-      device = "/dev/disk/by-label/VAR";
-      fsType = "ext4";
-      options = [ "noatime" ];
-    };
+    # "/var" = {
+    #   device = "/dev/disk/by-label/VAR";
+    #   fsType = "ext4";
+    #   options = [ "noatime" ];
+    # };
   };
 }

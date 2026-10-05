@@ -33,9 +33,6 @@
         ./configuration.nix
         sops-nix.nixosModules.sops
         #"${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-        # {
-        #   hardware.raspberry-pi.firmware.uboot.enable = true;
-        # }
         ({ pkgs, lib, ... }: {
           #sdImage.compressImage = false;
           imports = with nixos-raspberrypi.nixosModules; [

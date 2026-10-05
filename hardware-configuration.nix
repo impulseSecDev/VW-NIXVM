@@ -24,6 +24,11 @@
       options = [ "fmask=0022" "dmask=0022" ];
     };
 
+  fileSystems."/var/lib/vaultwarden" =
+    { device = "/dev/disk/by-uuid/e5c9ec40-8d0f-4588-92b9-498e0142d070";
+      fsType = "ext4";
+    };
+
   swapDevices = [ ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

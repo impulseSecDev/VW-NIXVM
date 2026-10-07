@@ -21,8 +21,8 @@
   };
 
 # Wait for usb mount on pi
-  systemd.services.vaultwarden.after = [ "var-lib-vaultwarden.mount" ];
-  systemd.services.vaultwarden.requires = [ "var-lib-vaultwarden.mount" ];
+ systemd.services.vaultwarden.after = [ "var-lib-vaultwarden.mount" ];
+ systemd.services.vaultwarden.requires = [ "var-lib-vaultwarden.mount" ];
 
   services.vaultwarden = {
     enable = true;

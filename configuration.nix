@@ -5,14 +5,21 @@
     [ 
       ./fluent-bit.nix
       ./wazuh-agent.nix
-       ./vaultwarden.nix
-       ./wireguard.nix
-       ./nginx.nix
-       ./fail2ban.nix
-       ./suricata.nix
+      ./vaultwarden.nix
+      ./wireguard.nix
+      ./nginx.nix
+      ./fail2ban.nix
+      ./suricata.nix
     ];
 
   zramSwap.enable = true; # Highly recommended for 4GB/8GB Pis
+
+  fileSystems."/boot/firmware".options = lib.mkForce [ "noatime" "nofail" ];
+  fileSystems."/var/lib/vaultwarden" = {
+    device = "/dev/disk/by-label/VAR";
+    fsType = "ext4";
+    options = [ "noatime" "nofail" "x-systemd.device-timeout=30s" ];
+  };
 
   services.openssh = {
     enable = false;
@@ -88,6 +95,7 @@ environment = {
   };
 
   boot.zfs.forceImportRoot = false;
+  boot.supportedFilesystems.zfs = lib.mkForce false;
 
   system.stateVersion = "26.05"; # Did you read the comment?
 

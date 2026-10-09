@@ -97,8 +97,8 @@
 
       [INPUT]
           name tail
-          path /var/log/syslog /var/log/messages
-          tag  vw.tail
+          path              /var/log/syslog /var/log/messages
+          tag               vw.tail
 
       [INPUT]
           name              tail
@@ -200,7 +200,7 @@
   systemd.services.fluent-bit = {
     serviceConfig = {
       # Critical for reading /var/lib/vaultwarden and suricata logs
-      SupplementaryGroups = [ "adm" "suricata" "vaultwarden" ];
+      SupplementaryGroups = [ "adm" "suricata" "vaultwarden" "nginx" ];
       StateDirectory = lib.mkForce "fluent-bit";
       StateDirectoryMode = "0750";
     };

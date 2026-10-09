@@ -127,7 +127,7 @@
 
       [INPUT]
           name              tail
-          tag               elkvm.nginx.access
+          tag               vw.nginx.access
           path              /var/log/nginx/access.log
           mem_buf_limit     5MB
           skip_long_lines   on
@@ -137,7 +137,7 @@
 
       [INPUT]
           name              tail
-          tag               elkvm.nginx.error
+          tag               vw.nginx.error
           path              /var/log/nginx/error.log
           mem_buf_limit     5MB
           skip_long_lines   on

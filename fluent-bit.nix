@@ -66,6 +66,20 @@
         Time_Key    timestamp
         Time_Format %Y-%m-%dT%H:%M:%S.%L%z
         Time_Keep   On
+
+    [PARSER]
+        Name   nginx
+        Format regex
+        Regex ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")
+        Time_Key time
+        Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name        nginx-error
+        Format      regex
+        Regex       ^(?<time>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?<level>\w+)\] (?<pid>\d+)#(?<tid>\d+): (?<message>.+)$
+        Time_Key    time
+        Time_Format %Y/%m/%d %H:%M:%S
   '';
 
   sops.templates."fluent-bit.conf" = {
@@ -110,6 +124,26 @@
           mem_buf_limit     5MB
           skip_long_lines   on
           refresh_interval  5
+
+      [INPUT]
+          name              tail
+          tag               elkvm.nginx.access
+          path              /var/log/nginx/access.log
+          mem_buf_limit     5MB
+          skip_long_lines   on
+          refresh_interval  5
+          Parser            nginx
+          db                /var/lib/fluent-bit/nginx.db
+
+      [INPUT]
+          name              tail
+          tag               elkvm.nginx.error
+          path              /var/log/nginx/error.log
+          mem_buf_limit     5MB
+          skip_long_lines   on
+          refresh_interval  5
+          Parser            nginx-error
+          db                /var/lib/fluent-bit/nginx-error.db
 
       [FILTER]
           name   modify

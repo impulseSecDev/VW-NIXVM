@@ -26,19 +26,19 @@
     acceptTerms = true;
     defaults = {
       email = "placeholder@mesh.com";
-      environmentFile = config.sops.templates."acme.env".path;
+      #environmentFile = config.sops.templates."acme.env".path;
     };
-    certs = {
-      # Name the cert bundle for the root or a specific service
-      "mesh.loranjennings.com" = {
-        # This issues a wildcard that covers *.mesh...
-        domain = "*.mesh.loranjennings.com";
-        # dnsProvider = "cloudflare";
-        # credentialFiles = {
-        #   "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
-        # };
-        group = "nginx";
-      };
+    # certs = {
+    #   # Name the cert bundle for the root or a specific service
+    #   "mesh.loranjennings.com" = {
+    #     # This issues a wildcard that covers *.mesh...
+    #     #domain = "*.mesh.loranjennings.com";
+    #     # dnsProvider = "cloudflare";
+    #     # credentialFiles = {
+    #     #   "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
+    #     # };
+    #     group = "nginx";
+    #   };
     };
   };
 
@@ -79,13 +79,12 @@
           proxyPass = "http://127.0.0.1:8222";
           proxyWebsockets = true;
           extraConfig = ''
-            proxy_set_header Host safe.mesh.loranjennings.com;
             proxy_set_header X-Real-IP $remote_addr;
           '';
         };
       };
 
-      "safe.mesh.loranjennings.com" = {
+      "safe.loranjennings.com" = {
         useACMEHost = "mesh.loranjennings.com";
 	forceSSL = true;
 
@@ -95,7 +94,6 @@
           proxyPass = "http://127.0.0.1:8222";
           proxyWebsockets = true;
           extraConfig = ''
-            proxy_set_header Host safe.mesh.loranjennings.com;
             proxy_set_header X-Real-IP $remote_addr;
           '';
         };

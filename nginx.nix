@@ -3,24 +3,24 @@
 {
   sops.secrets = {
     # Ensure the acme service can actually read the decrypted file
-    "cloudflare_api_token" = {
-      owner = config.users.users.acme.name;
-    };
+    # "cloudflare_api_token" = {
+    #   owner = config.users.users.acme.name;
+    # };
     "acme_email" = {
       owner = config.users.users.acme.name;
     };
   }; 
 
-  sops.templates."acme.env" = {
-    content = ''
-      CLOUDFLARE_DNS_API_TOKEN=${config.sops.placeholder."cloudflare_api_token"}
-      LEGO_EMAIL=${config.sops.placeholder."acme_email"}
-    '';
-    path = "/run/secrets/acme.env";
-    mode = "0440";
-    owner = "acme";
-    group = "acme";
-  };
+  # sops.templates."acme.env" = {
+  #   content = ''
+  #     CLOUDFLARE_DNS_API_TOKEN=${config.sops.placeholder."cloudflare_api_token"}
+  #     LEGO_EMAIL=${config.sops.placeholder."acme_email"}
+  #   '';
+  #   path = "/run/secrets/acme.env";
+  #   mode = "0440";
+  #   owner = "acme";
+  #   group = "acme";
+  # };
 
   security.acme = {
     acceptTerms = true;
@@ -33,10 +33,10 @@
       "mesh.loranjennings.com" = {
         # This issues a wildcard that covers *.mesh...
         domain = "*.mesh.loranjennings.com";
-        dnsProvider = "cloudflare";
-        credentialFiles = {
-          "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
-        };
+        # dnsProvider = "cloudflare";
+        # credentialFiles = {
+        #   "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
+        # };
         group = "nginx";
       };
     };

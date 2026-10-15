@@ -28,15 +28,15 @@
       email = "placeholder@mesh.com";
       environmentFile = config.sops.templates."acme.env".path;
     };
-     certs = {
-       # Name the cert bundle for the root or a specific service
-       "mesh.loranjennings.com" = {
-         # This issues a wildcard that covers *.mesh...
-         domain = "*.mesh.loranjennings.com";
-         dnsProvider = "cloudflare";
-         credentialFiles = {
-           "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
-         };
+      certs = {
+        # Name the cert bundle for the root or a specific service
+        "mesh.loranjennings.com" = {
+          # This issues a wildcard that covers *.mesh...
+          domain = "*.mesh.loranjennings.com";
+          dnsProvider = "cloudflare";
+          credentialFiles = {
+            "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
+          };
          group = "nginx";
        };
      };
@@ -72,9 +72,7 @@
         # Must match the string key in security.acme.certs above
         useACMEHost = "mesh.loranjennings.com";
         forceSSL = true;
-      
         listen = [ { addr = "100.64.0.9"; port = 443; ssl = true; } ];
-      
         locations."/" = {
           proxyPass = "http://127.0.0.1:8222";
           proxyWebsockets = true;
@@ -86,11 +84,9 @@
 
       "safe.loranjennings.com" = {
         useACMEHost = "mesh.loranjennings.com";
-	forceSSL = true;
-
-	listen = [ { addr = "10.10.20.2"; port = 443; ssl = true; } ];
-
-	locations."/" = {
+	      forceSSL = true;
+	      listen = [ { addr = "10.10.20.2"; port = 443; ssl = true; } ];
+	      locations."/" = {
           proxyPass = "http://127.0.0.1:8222";
           proxyWebsockets = true;
           extraConfig = ''

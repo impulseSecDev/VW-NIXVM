@@ -11,8 +11,8 @@
     "wg0_wazuh_allowedips" = {};
     "wg0_wazuh_endpoint" = {};
     "wg1_private_key" = {};
-    "wg1_vps_endpoint" = {};
-    "wg1_vps_allowedips" = {};
+    "wg1_firewall_endpoint" = {};
+    "wg1_firewall_allowedips" = {};
   };
 
   sops.templates."wg0.conf" = {
@@ -44,12 +44,13 @@
       [Interface]
       PrivateKey = ${config.sops.placeholder."wg1_private_key"}
       Address = 10.10.20.2/24
+      ListenPort = 36714
 
       [Peer]
-      # VPS
-      PublicKey = tvv1zSiAKKLt/p/HoAtF6sQUk1RwtZyPRM2aWWqYH3M=
-      AllowedIPs = ${config.sops.placeholder."wg1_vps_allowedips"}
-      Endpoint = ${config.sops.placeholder."wg1_vps_endpoint"}
+      # Firewall
+      PublicKey = InpHChcHbleCThzKcbAFIlQ2Esl318MKx3v1HAMNLFc=
+      AllowedIPs = ${config.sops.placeholder."wg1_firewall_allowedips"}
+      Endpoint = ${config.sops.placeholder."wg1_firewall_endpoint"}
       PersistentKeepalive = 25
     '';
     path = "/run/secrets/wg1.conf";
@@ -61,6 +62,13 @@
     wg1.configFile = config.sops.templates."wg1.conf".path;
   };
 
-  networking.firewall.checkReversePath = "loose";
+  networking.firewall = {
+    checkReversePath = "loose";
+    interfaces = {
+      "enu1u1u1" = {
+        allowedUDPPorts = [ 36714 ];
+      };
+    };
+  };
 }
 

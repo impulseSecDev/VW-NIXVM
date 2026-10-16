@@ -199,8 +199,7 @@
 
   systemd.services.fluent-bit = {
     serviceConfig = {
-      # Critical for reading /var/lib/vaultwarden and suricata logs
-      SupplementaryGroups = [ "adm" "suricata" "vaultwarden" "nginx" ];
+      SupplementaryGroups = [ "adm" "vaultwarden" "nginx" ];
       StateDirectory = lib.mkForce "fluent-bit";
       StateDirectoryMode = "0750";
     };

@@ -9,7 +9,7 @@
       ./wireguard.nix
       ./nginx.nix
       ./fail2ban.nix
-      ./suricata.nix
+      #./suricata.nix
     ];
 
   zramSwap.enable = true; # Highly recommended for 4GB/8GB Pis

@@ -83,15 +83,27 @@
       };
 
       "safe.loranjennings.com" = {
-        useACMEHost = "mesh.loranjennings.com";
-	      forceSSL = true;
-	      listen = [ { addr = "10.10.20.2"; port = 443; ssl = true; } ];
-	      locations."/" = {
-          proxyPass = "http://127.0.0.1:8222";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Real-IP $remote_addr;
-          '';
+        #useACMEHost = "mesh.loranjennings.com";
+	      forceSSL = false;
+	      listen = [ 
+          #{addr = "10.10.20.2"; port = 443; ssl = true; } 
+          { addr = "10.10.20.2"; port = 8080; }
+        ];
+	      locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:8222";
+            proxyWebsockets = true;
+            extraConfig = ''
+              set_real_ip_from 10.10.20.1;
+              real_ip_header X-Forwarded-For;
+              real_ip_recursive on;
+            '';
+          };
+          "/admin" = {
+            extraConfig = ''
+              return 444;
+            '';
+          };
         };
       };
     };
@@ -99,6 +111,6 @@
 
   # Open the port specifically on the Tailscale interface
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 443 ];
-  networking.firewall.interfaces."wg1".allowedTCPPorts = [ 443 ];
+  networking.firewall.interfaces."wg1".allowedTCPPorts = [ 80 8080 443 ];
 }
 

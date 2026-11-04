@@ -2,7 +2,6 @@
 
 {
   sops.secrets = {
-    # Ensure the acme service can actually read the decrypted file
     "cloudflare_api_token" = {
       owner = config.users.users.acme.name;
     };
@@ -37,13 +36,23 @@
           credentialFiles = {
             "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
           };
-         group = "nginx";
-       };
+          group = "nginx";
+        };
+        "safe.loranjennings.com" = {
+          dnsProvider = "cloudflare";
+          credentialFiles = {
+            "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare_api_token".path;
+          };
+          group = "nginx";
+        };
      };
   };
 
   services.nginx = {
     enable = true;
+    commonHttpConfig = ''
+      limit_req_zone $binary_remote_addr zone=flood_control:10m rate=1r/s;
+    '';
     virtualHosts = {
       # Default Fallback for HTTP (Port 80)
       "default-http-fallback" = {
@@ -69,7 +78,6 @@
       };
 
       "vw.mesh.loranjennings.com" = {
-        # Must match the string key in security.acme.certs above
         useACMEHost = "mesh.loranjennings.com";
         forceSSL = true;
         listen = [ { addr = "100.64.0.9"; port = 443; ssl = true; } ];
@@ -83,25 +91,48 @@
       };
 
       "safe.loranjennings.com" = {
-        #useACMEHost = "mesh.loranjennings.com";
-	      forceSSL = false;
-	      listen = [ 
-          #{addr = "10.10.20.2"; port = 443; ssl = true; } 
-          { addr = "10.10.20.2"; port = 8080; }
+        useACMEHost = "safe.loranjennings.com";
+        forceSSL = true;
+        listen = [
+          { addr = "10.10.20.2"; port = 443; ssl = true; proxyProtocol = true; }
         ];
-	      locations = {
+
+        extraConfig = ''
+          set_real_ip_from 10.10.20.3;
+          real_ip_header proxy_protocol;
+
+          client_max_body_size 525M;
+
+          proxy_intercept_errors on;
+          error_page 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 421 422 423 424 425 426 428 429 431 451 = @drop;
+          limit_req_status 429;
+        '';
+
+        locations = {
+          "@drop".extraConfig = "return 444;";
+
+          "~ /\\.".extraConfig = ''
+            access_log off;
+            log_not_found off;
+            return 444;
+          '';
+
+          "^~ /admin".extraConfig = "return 444;";
+
+          "~* \"(\\.env|\\.git|\\.htaccess|wp-login|wp-admin|phpMyAdmin|adminer|\\.php$)\"".extraConfig = "return 444;";
+          "~* \"^/cgi-bin\"".extraConfig = "return 444;";
+          "~* \"\\.(sh|bash|py|pl|exe|bat)$\"".extraConfig = "return 444;";
+
           "/" = {
             proxyPass = "http://127.0.0.1:8222";
             proxyWebsockets = true;
             extraConfig = ''
-              set_real_ip_from 10.10.20.1;
-              real_ip_header X-Forwarded-For;
-              real_ip_recursive on;
-            '';
-          };
-          "/admin" = {
-            extraConfig = ''
-              return 444;
+              limit_req zone=flood_control burst=20 nodelay;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_read_timeout 300s;
             '';
           };
         };
@@ -109,8 +140,6 @@
     };
   };
 
-  # Open the port specifically on the Tailscale interface
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 443 ];
   networking.firewall.interfaces."wg1".allowedTCPPorts = [ 80 8080 443 ];
 }
-

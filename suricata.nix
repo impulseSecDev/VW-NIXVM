@@ -30,7 +30,7 @@ in
 ---
 vars:
   address-groups:
-    HOME_NET: "[192.168.0.0/16,10.0.0.0/24,172.16.0.0/24,100.64.0.0/24]"
+    HOME_NET: "[192.168.0.0/16,10.0.0.0/24,100.64.0.0/24]"
     EXTERNAL_NET: "!$HOME_NET"
     HTTP_SERVERS: "$HOME_NET"
     SQL_SERVERS: "$HOME_NET"
@@ -228,6 +228,7 @@ re:dnp3
       ExecStartPre = "${pkgs.suricata}/bin/suricata -c /etc/suricata/suricata.yaml -T";
       ExecStart = "${pkgs.suricata}/bin/suricata -c /etc/suricata/suricata.yaml --pidfile /run/suricata/suricata.pid -q 0 -q 1 -q 2 -q 3";
       ExecReload = "${pkgs.suricata}/bin/suricatasc -c reload-rules";
+      TimeoutStartSec = "15min";
       Restart = "on-failure";
       RestartSec = "5s";
     };
